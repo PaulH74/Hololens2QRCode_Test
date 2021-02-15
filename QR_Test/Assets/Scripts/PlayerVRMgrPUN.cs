@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using Photon.Pun;
-//using Photon.Voice.Unity;
 
 namespace Hydac_QR
 {
@@ -8,7 +7,7 @@ namespace Hydac_QR
     /// This class managers the local player's instance over the PUN network and local player's inputs, sending the Transform data of the local player's VR hardware to other
     /// networked players and receiving their data in turn to animate their VR Avatar on the local player's instance
     /// </summary>
-    public class PlayerHololensPUN : MonoBehaviourPun, IPunObservable
+    public class PlayerVRMgrPUN : MonoBehaviourPun, IPunObservable
     {
         #region Public and Private Attributes
         [Tooltip("The local player instance. Use this to know if local player is represented in the scene")]
@@ -17,23 +16,19 @@ namespace Hydac_QR
         // VR Avatar Elements
         [Header("Player Avatar (Displayed to other networked players):")]
         public GameObject headAvatar;
-        public GameObject mouthAnimated;
-        public GameObject mouthStatic;
         public GameObject leftHandAvatar;
         public GameObject rightHandAvatar;
+        public GameObject mouthAnimated;
+        public GameObject mouthStatic;
+
+        // Hand Gestures
+        [Header("Avatar Hand Poses:")]
         public SkinnedMeshRenderer poseNormalLH;
-        public SkinnedMeshRenderer poseFingerPointLH;
         public SkinnedMeshRenderer poseThumbUpLH;
+        public SkinnedMeshRenderer poseFingerPointLH;
         public SkinnedMeshRenderer poseNormalRH;
-        public SkinnedMeshRenderer poseFingerPointRH;
         public SkinnedMeshRenderer poseThumbUpRH;
-        [Tooltip("Order: Thumb, Index, Middle, Ring, Small")]
-        public GameObject[] leftFingers;
-        [Tooltip("Order: Thumb, Index, Middle, Ring, Small")]
-        public GameObject[] rightFingers;
-        private FollowTrackedFingers _Hands;
-        private Transform localH2CameraTF;
-        private bool _HandsTracked;
+        public SkinnedMeshRenderer poseFingerPointRH;
 
         // Smoothing Variables For Remote Player's Motion
         [Header("Player Avatar Motion Smoothing:")]
@@ -45,73 +40,36 @@ namespace Hydac_QR
         public float appliedDistance;   // Set to 1 as default (based on CUBE use-case tests)
         private Vector3 correctPlayerHeadPosition = Vector3.zero;
         private Quaternion correctPlayerHeadRotation = Quaternion.identity;
-
-        // Hololens Camera Element
-        private Camera _CameraRig;
-
-        // Voice Element
-        //private Recorder _RecorderPUN;
         #endregion
 
         #region Unity Methods
-        private void Awake()
-        {
-            // Important:
-            // used in RoomManager.cs: we keep track of the localPlayer instance to prevent instantiation when levels are synchronised
-            if (photonView.IsMine)
-            {
-                localPlayerInstance = gameObject;
+        //private void Awake()
+        //{
+        //    // Important:
+        //    // used in RoomManager.cs: we keep track of the localPlayer instance to prevent instantiation when levels are synchronised
+        //    if (photonView.IsMine)
+        //    {
+        //        localPlayerInstance = gameObject;
 
-                // Assign Hololens Camera to MRTK Camera in local player's scene
-                _CameraRig = Camera.main;
-                localH2CameraTF = _CameraRig.transform;                 // Get transform data from local VR Headset
+        //        // Don't display our own "player" avatar to ourselves (except for map icon)
+        //        headAvatar.SetActive(false);
+        //        leftHandAvatar.SetActive(false);
+        //        rightHandAvatar.SetActive(false);
 
-                // Don't display our own "player" avatar to ourselves (except for map icon)
-                headAvatar.SetActive(false);
-                leftHandAvatar.SetActive(false);
-                rightHandAvatar.SetActive(false);
-                for (int i = 0; i < leftFingers.Length; i++)
-                {
-                    leftFingers[i].SetActive(false);
-                    rightFingers[i].SetActive(false);
-                }
+        //        // Hand Gestures (default state)
+        //        SetLeftHandPose(true, false, false);
+        //        SetRightHandPose(true, false, false);
+        //    }
 
-                // Initialise Hands Tracking
-                _Hands = GetComponentInChildren<FollowTrackedFingers>();
-
-                // Initialise Voice Elements
-                //_RecorderPUN = GetComponent<Recorder>();
-                mouthAnimated.SetActive(false);
-            }
-
-            // Critical
-            // Don't Destroy on load to prevent player from being destroyed when another player joins / leaves the room
-            DontDestroyOnLoad(gameObject);
-        }
+        //    // Critical
+        //    // Don't Destroy on load to prevent player from being destroyed when another player joins / leaves the room
+        //    DontDestroyOnLoad(gameObject);
+        //}
 
         // Update each frame
         private void Update()
         {
-            if (photonView.IsMine)
-            {
-                // AUDIO GROUPS: 
-                // Allow user to set local group
-                // Sets next available group.
-                // Remote group players add that group to their listen list.
-
-                if (_CameraRig != null)
-                {
-                    // Update local player's camera transform data
-                    localH2CameraTF.position = _CameraRig.transform.position;
-                    localH2CameraTF.rotation = _CameraRig.transform.rotation;
-                }
-                else
-                {
-                    _CameraRig = Camera.main;
-                    localH2CameraTF = _CameraRig.transform;
-                }
-            }
-            else
+            if (!photonView.IsMine)
             {
                 // Smooth Remote player's motion on local machine
                 SmoothPlayerMotion(ref headAvatar, ref correctPlayerHeadPosition, ref correctPlayerHeadRotation);
@@ -157,18 +115,9 @@ namespace Hydac_QR
         /// <param name="thumbUp"></param>
         private void SetRightHandPose(bool normal, bool point, bool thumbUp)
         {
-            if (_HandsTracked)
-            {
-                poseNormalRH.enabled = normal;
-                poseFingerPointRH.enabled = point;
-                poseThumbUpRH.enabled = thumbUp;
-            }
-            else
-            {
-                poseNormalRH.enabled = false;
-                poseFingerPointRH.enabled = false;
-                poseThumbUpRH.enabled = false;
-            }
+            poseNormalRH.enabled = normal;
+            poseFingerPointRH.enabled = point;
+            poseThumbUpRH.enabled = thumbUp;
         }
 
         /// <summary>
@@ -179,18 +128,9 @@ namespace Hydac_QR
         /// <param name="thumbUp"></param>
         private void SetLeftHandPose(bool normal, bool point, bool thumbUp)
         {
-            if (_HandsTracked)
-            {
-                poseNormalLH.enabled = normal;
-                poseFingerPointLH.enabled = point;
-                poseThumbUpLH.enabled = thumbUp;
-            }
-            else
-            {
-                poseNormalLH.enabled = false;
-                poseFingerPointLH.enabled = false;
-                poseThumbUpLH.enabled = false;
-            }
+            poseNormalLH.enabled = normal;
+            poseFingerPointLH.enabled = point;
+            poseThumbUpLH.enabled = thumbUp;
         }
 
         /// <summary>
@@ -235,43 +175,18 @@ namespace Hydac_QR
         /// <param name="info"></param>
         void IPunObservable.OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
         {
-            if (stream.IsWriting)
-            {
-                // Send local VR Headset position and rotation data to networked player
-                stream.SendNext(localH2CameraTF.position);
-                stream.SendNext(localH2CameraTF.rotation);
-                stream.SendNext(_Hands.IsTracking);
-                stream.SendNext(_Hands.WristLeftPosition);
-                stream.SendNext(_Hands.WristLeftRotation);
-                stream.SendNext(_Hands.WristRightPosition);
-                stream.SendNext(_Hands.WristRightRotation);
-                //for (int i = 0; i < 5; i++)
-                //{
-                //    stream.SendNext(_Hands.GetLeftFinger(i));
-                //    stream.SendNext(_Hands.GetRightFinger(i));
-                //}
-                stream.SendNext((int)_Hands.LeftHandPose);
-                stream.SendNext((int)_Hands.RightHandPose);
-                //stream.SendNext(_RecorderPUN.VoiceDetector.Detected);      // Toggle "Mouth Animation" on / off when speaking / quiet
-            }
-            else if (stream.IsReading)
+            if (stream.IsReading)
             {
                 // Receive networked player's VR Headset position and rotation data
                 correctPlayerHeadPosition = (Vector3)stream.ReceiveNext();
                 correctPlayerHeadRotation = (Quaternion)stream.ReceiveNext();
-                _HandsTracked = (bool)stream.ReceiveNext();
                 leftHandAvatar.transform.position = (Vector3)stream.ReceiveNext();
                 leftHandAvatar.transform.rotation = (Quaternion)stream.ReceiveNext();
                 rightHandAvatar.transform.position = (Vector3)stream.ReceiveNext();
                 rightHandAvatar.transform.rotation = (Quaternion)stream.ReceiveNext();
-                //for (int i = 0; i < 5; i++)
-                //{
-                //    leftFingers[i].transform.position = (Vector3)stream.ReceiveNext();
-                //    rightFingers[i].transform.position = (Vector3)stream.ReceiveNext();
-                //}
                 GetCurrentHandPose((HandPoses)stream.ReceiveNext());
                 GetCurrentHandPose((HandPoses)stream.ReceiveNext());
-                //ToggleMouthState((bool)stream.ReceiveNext());
+                ToggleMouthState((bool)stream.ReceiveNext());
             }
         }
         #endregion

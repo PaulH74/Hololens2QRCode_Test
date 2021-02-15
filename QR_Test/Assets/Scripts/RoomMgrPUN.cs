@@ -52,7 +52,7 @@ namespace Hydac_QR
             }
             else
             {
-                if (PlayerHololensPUN.localPlayerInstance == null)
+                if (PlayerHololensMgrPUN.localPlayerInstance == null)
                 {
                     Debug.LogFormat("Instantiating LocalPlayer from {0}", SceneManagerHelper.ActiveSceneName);
 

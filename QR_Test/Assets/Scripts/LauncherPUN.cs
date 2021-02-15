@@ -13,7 +13,7 @@ namespace Hydac_QR
     {
         #region Private and Public Attributes
         // Public Attributes
-        public const string ROOM_NAME = "SampleScene";
+        public const string ROOM_NAME = "MP_Scene";
 
         // Private Attributes
         [Tooltip("The maximum number of players per room. When a room is full, it can't be joined by new players, and so new room will be created.  NOTE: max is 20 users")]

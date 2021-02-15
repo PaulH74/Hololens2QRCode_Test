@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Launcher.unity
     guid: e8f3b57ba9fe832428eb1d481280c8bd
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/MP_Scene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
     Unity.XR.WindowsMR.Settings: {fileID: 11400000, guid: 49a5dacbcbc2ddf47bbe5cbca6954460,
